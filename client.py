@@ -2,7 +2,8 @@ import logging
 from collections import OrderedDict
 import torch
 import torch.nn.utils.prune as prune
-from simplify import simplify
+# from simplify import simplify
+from simplify.simplify import simplify
 
 
 
@@ -10,7 +11,7 @@ class ClientGold(object):
 
     def __init__(self, dataloader, id, criterion, local_epochs, learning_rate):
 
-        path = "drive/MyDrive/"
+        path = "/content/drive/MyDrive/"
         # path = ""
         self.id = id
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -67,7 +68,7 @@ class ClientBronze(object):
         self.logger = logging.getLogger(f'client{id}')
         self.logger.setLevel(logging.INFO)
 
-        path = "drive/MyDrive/"
+        path = "/content/drive/MyDrive/"
         # path = ""
         ch = logging.FileHandler(f'{path}reports/client{id}', "w")
         ch.setLevel(logging.INFO)

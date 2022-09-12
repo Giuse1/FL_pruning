@@ -1,7 +1,6 @@
 import copy
 from collections import OrderedDict
 import torch.nn.utils.prune as prune
-from simplify import simplify
 import torch
 import logging
 import utils
@@ -24,7 +23,7 @@ class Server(object):
 
     def set_present_rows(self):
 
-        path = "drive/MyDrive"
+        path = "/content/drive/MyDrive/"
         # path = ""
 
         self.present_rows_setted = True

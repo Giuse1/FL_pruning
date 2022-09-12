@@ -19,7 +19,7 @@ local_epochs = 1
 lr = 0.01
 
 num_rounds = 100  # todo
-batch_size = 2  # todo
+batch_size = 64  # todo
 in_size = 32  # todo
 #
 # logging.basicConfig(
@@ -52,7 +52,7 @@ model = model.to(device)
 
 criterion = nn.CrossEntropyLoss()
 
-client_type_dict = {0: "bronze", 1:"bronze", 2:"bronze", 3:"bronze"}
+client_type_dict = {0: "gold", 1:"gold", 2:"bronze", 3:"bronze"}
 
 train_loss, train_acc, val_loss, val_acc = train_model(model, criterion, num_rounds=num_rounds,
                                                        local_epochs=local_epochs, total_num_users=total_num_users,
