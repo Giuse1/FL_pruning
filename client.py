@@ -9,6 +9,9 @@ from simplify import simplify
 class ClientGold(object):
 
     def __init__(self, dataloader, id, criterion, local_epochs, learning_rate):
+
+        path = "drive/MyDrive/"
+        # path = ""
         self.id = id
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.criterion = criterion
@@ -19,7 +22,7 @@ class ClientGold(object):
         self.logger = logging.getLogger(f'client{id}')
         self.logger.setLevel(logging.INFO)
 
-        ch = logging.FileHandler(f'reports/client{id}', "w")
+        ch = logging.FileHandler(f'{path}reports/client{id}', "w")
         ch.setLevel(logging.INFO)
         self.logger.addHandler(ch)
         self.logger.info("local_loss,local_correct,len_dataset")
@@ -64,7 +67,9 @@ class ClientBronze(object):
         self.logger = logging.getLogger(f'client{id}')
         self.logger.setLevel(logging.INFO)
 
-        ch = logging.FileHandler(f'reports/client{id}', "w")
+        path = "drive/MyDrive/"
+        # path = ""
+        ch = logging.FileHandler(f'{path}reports/client{id}', "w")
         ch.setLevel(logging.INFO)
         self.logger.addHandler(ch)
         self.logger.info("local_loss,local_correct,len_dataset")

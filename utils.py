@@ -29,10 +29,10 @@ def get_cifar_iid(batch_size, total_num_clients, in_size):
     )
 
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
-                                            download=False, transform=transform)
+                                            download=True, transform=transform)
 
     testset = torchvision.datasets.CIFAR10(root='./data', train=False,
-                                           download=False, transform=transform)
+                                           download=True, transform=transform)
 
     total_data = len(trainset)
     random_list = random.sample(range(total_data), total_data)

@@ -24,9 +24,12 @@ class Server(object):
 
     def set_present_rows(self):
 
+        path = "drive/MyDrive"
+        # path = ""
+
         self.present_rows_setted = True
 
-        self.nonzero_output = {k: torch.load(f"nonzero_indices/output/{k.replace('.weight', '')}.pt") for k in
+        self.nonzero_output = {k: torch.load(f"{path}nonzero_indices/output/{k.replace('.weight', '')}.pt") for k in
                                self.starting_dict.keys() if "weight" in k}
 
         self.present_rows = [v.nonzero(as_tuple=True)[0].tolist() for v in self.nonzero_output.values()]
@@ -36,8 +39,8 @@ class Server(object):
 
         self.input_nz, self.output_nz = {}, {}
         for idx_k, k in enumerate(self.original_keys):
-            self.input_nz[k] = torch.load(f"nonzero_indices/input/{k}.pt")
-            self.output_nz[k] = torch.load(f"nonzero_indices/output/{k}.pt")
+            self.input_nz[k] = torch.load(f"{path}nonzero_indices/input/{k}.pt")
+            self.output_nz[k] = torch.load(f"{path}nonzero_indices/output/{k}.pt")
 
     def model_evaluation(self, model, dataloader, criterion):
         with torch.no_grad():
