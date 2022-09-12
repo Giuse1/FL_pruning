@@ -36,7 +36,7 @@ def train_model(global_model, criterion, num_rounds, local_epochs, total_num_use
                                     local_epochs=local_epochs, learning_rate=learning_rate, in_size=in_size)
     for round in range(num_rounds):
         print('-' * 10)
-        print('Epoch {}/{}'.format(round, num_rounds - 1))
+        print('Epoch {}/{}'.format(round+1, num_rounds - 1))
 
         for phase in ['train', 'val']:
             if phase == 'train':
@@ -51,8 +51,6 @@ def train_model(global_model, criterion, num_rounds, local_epochs, total_num_use
 
                     local_weights[idx] = copy.deepcopy(local_state_dict)
                     samples_per_client[idx] = (local_n_samples)
-                    print(clients[idx])
-                    print(local_weights[idx]["features.0.weight"].shape)
 
                 # random list need to order th models accoridng to bronze and gold
                 if not server.present_rows_setted:

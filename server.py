@@ -33,8 +33,6 @@ class Server(object):
         self.present_rows.insert(0, [0, 1, 2])
 
         self.present_rows = self.present_rows[:11]
-        print(f"len present rows: {len(self.present_rows)}")
-        print([len(e) for e in self.present_rows])
 
         self.input_nz, self.output_nz = {}, {}
         for idx_k, k in enumerate(self.original_keys):
@@ -58,7 +56,7 @@ class Server(object):
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels)
                 running_total += labels.shape[0]
-                break # todo
+                # break # todo
 
             epoch_loss = running_loss / running_total
             epoch_acc = running_corrects / running_total
@@ -67,10 +65,7 @@ class Server(object):
 
     def average_weights(self, w, samples_per_client):
 
-        print(1)
         for i in self.to_recover:
-            # print(w[i].keys())
-            # print([v.shape for v in w[i].values()])
             w[i] = self.recover_matrix(w[i], 10, w[self.not_to_recover[0]])
 
         w_avg = copy.deepcopy(w[0])
@@ -114,16 +109,7 @@ class Server(object):
                 mask[:, self.input_nz[k]] += torch.ones((dim[0], int(dim[1] / 2)))
                 mask = mask == 2
 
-                # print(reconstructed_b.shape)
-                # print(k)
-                # print(self.output_nz[k].shape)
-                # print(self.output_nz[k].count_nonzero())
-                # print(model_dict[k+".bias"].shape)
-                print(model_dict[k + ".bias"].shape)
-                print(self.output_nz[k].count_nonzero())
-                print("---")
                 reconstructed_b[self.output_nz[k]] = model_dict[k + ".bias"]
-
                 reconstruced_dict[k + ".bias"] = reconstructed_b
 
                 reconstructed_w[mask] = torch.reshape(model_dict[k + ".weight"], (-1,))
