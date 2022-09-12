@@ -82,7 +82,7 @@ class Server(object):
 
 
     def recover_matrix(self, model_dict, n_classes, original_dict):
-
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         reconstruced_dict = OrderedDict()
 
         for idx_k, k in enumerate(self.original_keys):
@@ -99,7 +99,7 @@ class Server(object):
                         tmp = model_dict[k + ".weight"][idx_r, idx_c]
 
                         reconstructed_w[r, c] = tmp
-                reconstruced_dict[k + ".weight"] = reconstructed_w
+                reconstruced_dict[k + ".weight"] = reconstructed_w.to(device)
                 # reconstruced_dict[k + ".bias"] = reconstructed_b
             elif "classifier" in k and "classifier.6" not in k:
 
@@ -111,11 +111,11 @@ class Server(object):
                 mask[:, self.input_nz[k]] += torch.ones((dim[0], int(dim[1] / 2)))
                 mask = mask == 2
 
-                reconstructed_b[self.output_nz[k]] = model_dict[k + ".bias"]
-                reconstruced_dict[k + ".bias"] = reconstructed_b
+                reconstructed_b[self.output_nz[k]] = model_dict[k + ".bias"].cpu()
+                reconstruced_dict[k + ".bias"] = reconstructed_b.to(device)
 
-                reconstructed_w[mask] = torch.reshape(model_dict[k + ".weight"], (-1,))
-                reconstruced_dict[k + ".weight"] = reconstructed_w
+                reconstructed_w[mask] = torch.reshape(model_dict[k + ".weight"], (-1,)).cpu()
+                reconstruced_dict[k + ".weight"] = reconstructed_w.to(device)
 
         k = "classifier.6"
         reconstruced_dict[k + ".bias"] = model_dict["classifier.6.bias"]
@@ -125,7 +125,7 @@ class Server(object):
         mask = torch.zeros(dim)
         mask[:, self.input_nz[k]] += torch.ones((dim[0], int(dim[1] / 2)))
         mask = mask == 1
-        reconstructed_w[mask] = torch.reshape(model_dict[k + ".weight"], (-1,))
-        reconstruced_dict[k + ".weight"] = reconstructed_w
+        reconstructed_w[mask] = torch.reshape(model_dict[k + ".weight"], (-1,)).cpu()
+        reconstruced_dict[k + ".weight"] = reconstructed_w.to(device)
 
         return reconstruced_dict
