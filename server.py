@@ -58,7 +58,7 @@ class Server(object):
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels)
                 running_total += labels.shape[0]
-                # break # todo
+                break # todo
 
             epoch_loss = running_loss / running_total
             epoch_acc = running_corrects / running_total
@@ -67,11 +67,10 @@ class Server(object):
 
     def average_weights(self, w, samples_per_client):
 
-
+        print(1)
         for i in self.to_recover:
             # print(w[i].keys())
             # print([v.shape for v in w[i].values()])
-
             w[i] = self.recover_matrix(w[i], 10, w[self.not_to_recover[0]])
 
         w_avg = copy.deepcopy(w[0])
@@ -81,7 +80,7 @@ class Server(object):
                     w_avg[key] = torch.true_divide(w[i][key], 1 / samples_per_client[i])
                 else:
                     w_avg[key] += torch.true_divide(w[i][key], 1 / samples_per_client[i])
-            w_avg[key] = torch.true_divide(w_avg[key], sum(samples_per_client))
+            w_avg[key] = torch.true_divide(w_avg[key], sum(samples_per_client.values()))
         return w_avg
 
 
@@ -95,33 +94,18 @@ class Server(object):
             reconstructed_w = torch.zeros(dim)
 
             if "features" in k:
-                # print(dim)
-                # print(self.present_rows[idx_k + 1])
-                # print(self.present_rows[idx_k])
-                # print(model_dict[k + ".weight"].shape)
 
                 for idx_r, r in enumerate(self.present_rows[idx_k + 1]):
                     # reconstructed_b[r] = model_dict[k + ".bias"][idx_r]
 
                     for idx_c, c in enumerate(self.present_rows[idx_k]):
-                        try:
-                            tmp = model_dict[k + ".weight"][idx_r, idx_c]
-                        except:
-                            print(idx_k)
-                            print(len((self.present_rows[idx_k + 1])))
-                            print(self.present_rows[idx_k + 1])
-                            print(model_dict[k + ".weight"].shape)
-                            print(idx_c)
-                            print(idx_r)
-                            print(ci)
+                        tmp = model_dict[k + ".weight"][idx_r, idx_c]
+
                         reconstructed_w[r, c] = tmp
                 reconstruced_dict[k + ".weight"] = reconstructed_w
                 # reconstruced_dict[k + ".bias"] = reconstructed_b
             elif "classifier" in k and "classifier.6" not in k:
 
-                # todo
-                # a = torch.load(f"nonzero_indices/input/{k}.pt")
-                # b = torch.load(f"nonzero_indices/output/{k}.pt")
                 reconstructed_b = torch.zeros(dim[0])
 
                 mask = torch.zeros(dim)
@@ -135,7 +119,11 @@ class Server(object):
                 # print(self.output_nz[k].shape)
                 # print(self.output_nz[k].count_nonzero())
                 # print(model_dict[k+".bias"].shape)
+                print(model_dict[k + ".bias"].shape)
+                print(self.output_nz[k].count_nonzero())
+                print("---")
                 reconstructed_b[self.output_nz[k]] = model_dict[k + ".bias"]
+
                 reconstruced_dict[k + ".bias"] = reconstructed_b
 
                 reconstructed_w[mask] = torch.reshape(model_dict[k + ".weight"], (-1,))

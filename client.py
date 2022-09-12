@@ -1,9 +1,9 @@
 import logging
 from collections import OrderedDict
-
 import torch
 import torch.nn.utils.prune as prune
 from simplify import simplify
+
 
 
 class ClientGold(object):
@@ -44,7 +44,7 @@ class ClientGold(object):
                 loss.backward()
                 optimizer.step()
                 local_loss += loss.item() * images.size(0)
-                # break # todo
+                break # todo
 
         self.logger.info(f"{local_loss},{local_correct},{len(self.dataloader.dataset)}")
 
@@ -86,7 +86,8 @@ class ClientBronze(object):
         else:
             # apply mask, saved in self.mask.dict
             self.prune_from_mask(model, self.device, self.in_size)
-
+            print("prune from mask")
+            print(model.state_dict()["features.0.weight"].shape)
 
         model.train()
         lr = self.learning_rate
@@ -107,7 +108,7 @@ class ClientBronze(object):
                 loss.backward()
                 optimizer.step()
                 local_loss += loss.item() * images.size(0)
-                # break # todo
+                break # todo
 
         self.logger.info(f"{local_loss},{local_correct},{len(self.dataloader.dataset)}")
 
@@ -144,16 +145,20 @@ class ClientBronze(object):
 
         for name, mask in self.mask_dict.items():
             cmp, idx = name.split('.')
-
             prune.custom_from_mask(getattr(model, cmp)[int(idx)], name="weight", mask=mask)
             prune.remove(getattr(model, cmp)[int(idx)], 'weight')
+            # torch.nan_to_num(model.state_dict()[f"{cmp}.{int(idx)}.weight"], nan=0.5)
 
-        # print(model.state_dict().keys())
-        # print([v.shape for v in model.state_dict().values()])
+
+        print("--------")
+        print(model.state_dict().keys())
+        print([v.shape for v in model.state_dict().values()])
         dummy_input = torch.zeros(1, 3, in_size, in_size).to(device)
         simplify(model, dummy_input)
-        # print([v.shape for v in model.state_dict().values()])
-        # print(model.state_dict().keys())
+
+        print([v.shape for v in model.state_dict().values()])
+        print(model.state_dict().keys())
+        print("--------")
 
 
 

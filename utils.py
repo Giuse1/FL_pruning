@@ -1,13 +1,3 @@
-import io
-import torch
-import random
-import numpy as np
-import copy
-from collections import OrderedDict
-import torch.nn.utils.prune as prune
-from simplify import simplify
-
-
 import torch
 import torchvision
 import torchvision.transforms as transforms
