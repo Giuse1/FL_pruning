@@ -8,6 +8,8 @@ class Server(object):
     def __init__(self, client_type_dict, starting_dict):
 
         self.client_type_dict = client_type_dict
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
         # self.mask_dict = {k:{} for k,v in client_type_dict.items()}
         self.mask_dict_global = None
         self.to_recover = [k for k, v in client_type_dict.items() if v == "bronze"]
@@ -22,8 +24,8 @@ class Server(object):
 
     def set_present_rows(self):
 
-        # path = "/content/drive/MyDrive/"
-        path = ""
+        path = "/content/drive/MyDrive/"
+        # path = ""
 
         self.present_rows_setted = True
 
@@ -43,13 +45,12 @@ class Server(object):
     def model_evaluation(self, model, dataloader, criterion):
         with torch.no_grad():
             model.eval()
-            device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
             running_loss = 0.0
             running_corrects = 0
             running_total = 0
 
             for (i, data) in enumerate(dataloader):
-                inputs, labels = data[0].to(device), data[1].to(device)
+                inputs, labels = data[0].to(self.device), data[1].to(self.device)
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
                 _, preds = torch.max(outputs, 1)
@@ -82,7 +83,7 @@ class Server(object):
                                              for k, v in w[i].items()}
                 elif cnt != 0 and self.client_type_dict[i] == "bronze":
                     self.mask_dict_global = {
-                        k: (v != 0).type(torch.int32) * samples_per_client[i] + self.mask_dict_global[k] for k, v in
+                        k: (v != 0).type(torch.int32).to(self.device) * samples_per_client[i] + self.mask_dict_global[k] for k, v in
                         w[i].items()}
 
         w_avg = copy.deepcopy(w[0])

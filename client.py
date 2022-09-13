@@ -11,8 +11,8 @@ class ClientGold(object):
 
     def __init__(self, dataloader, id, criterion, local_epochs, learning_rate):
 
-        # path = "/content/drive/MyDrive/"
-        path = ""
+        path = "/content/drive/MyDrive/" #todo
+        # path = ""
         self.id = id
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.criterion = criterion
@@ -68,8 +68,8 @@ class ClientBronze(object):
         self.logger = logging.getLogger(f'client{id}')
         self.logger.setLevel(logging.INFO)
 
-        # path = "/content/drive/MyDrive/"
-        path = ""
+        path = "/content/drive/MyDrive/" #tod0
+        # path = ""
         ch = logging.FileHandler(f'{path}reports/client{id}', "w")
         ch.setLevel(logging.INFO)
         self.logger.addHandler(ch)
