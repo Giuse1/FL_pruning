@@ -1,15 +1,15 @@
 import copy
 from collections import OrderedDict
-import torch.nn.utils.prune as prune
 import torch
-import logging
-import utils
 
 
 class Server(object):
 
     def __init__(self, client_type_dict, starting_dict):
 
+        self.client_type_dict = client_type_dict
+        # self.mask_dict = {k:{} for k,v in client_type_dict.items()}
+        self.mask_dict_global = None
         self.to_recover = [k for k, v in client_type_dict.items() if v == "bronze"]
         self.not_to_recover = [k for k, v in client_type_dict.items() if v == "gold"]
         self.starting_dict = starting_dict
@@ -20,11 +20,10 @@ class Server(object):
         self.original_keys = list(dict.fromkeys(self.original_keys))
         self.present_rows_setted = False
 
-
     def set_present_rows(self):
 
-        path = "/content/drive/MyDrive/"
-        # path = ""
+        # path = "/content/drive/MyDrive/"
+        path = ""
 
         self.present_rows_setted = True
 
@@ -67,8 +66,24 @@ class Server(object):
 
     def average_weights(self, w, samples_per_client):
 
+        # recover full weight matrices
         for i in self.to_recover:
-            w[i] = self.recover_matrix(w[i], 10, w[self.not_to_recover[0]])
+            w[i] = self.recover_matrix(i, w[i], 10, w[self.not_to_recover[0]])
+
+        if self.mask_dict_global == None:
+            for cnt, i in enumerate(w.keys()):
+                if cnt == 0 and self.client_type_dict[i] == "gold":
+                    self.mask_dict_global = {k: torch.ones(v.shape) * samples_per_client[i] for k, v in w[i].items()}
+                elif cnt == 0 and self.client_type_dict[i] == "bronze":
+                    self.mask_dict_global = {k: (v != 0).type(torch.int32) * samples_per_client[i] for k, v in
+                                             w[i].items()}
+                elif cnt != 0 and self.client_type_dict[i] == "gold":
+                    self.mask_dict_global = {k: torch.ones(v.shape) * samples_per_client[i] + self.mask_dict_global[k]
+                                             for k, v in w[i].items()}
+                elif cnt != 0 and self.client_type_dict[i] == "bronze":
+                    self.mask_dict_global = {
+                        k: (v != 0).type(torch.int32) * samples_per_client[i] + self.mask_dict_global[k] for k, v in
+                        w[i].items()}
 
         w_avg = copy.deepcopy(w[0])
         for key in w_avg.keys():
@@ -77,11 +92,11 @@ class Server(object):
                     w_avg[key] = torch.true_divide(w[i][key], 1 / samples_per_client[i])
                 else:
                     w_avg[key] += torch.true_divide(w[i][key], 1 / samples_per_client[i])
-            w_avg[key] = torch.true_divide(w_avg[key], sum(samples_per_client.values()))
+            # w_avg[key] = torch.true_divide(w_avg[key], sum(samples_per_client.values()))
+            w_avg[key] = torch.true_divide(w_avg[key], self.mask_dict_global[key])
         return w_avg
 
-
-    def recover_matrix(self, model_dict, n_classes, original_dict):
+    def recover_matrix(self, idx, model_dict, n_classes, original_dict):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         reconstruced_dict = OrderedDict()
 
