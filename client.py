@@ -2,17 +2,15 @@ import logging
 from collections import OrderedDict
 import torch
 import torch.nn.utils.prune as prune
-# from simplify import simplify
-from simplify.simplify import simplify
+from simplify import simplify
+# from simplify.simplify import simplify
 
 
 
 class ClientGold(object):
 
-    def __init__(self, dataloader, id, criterion, local_epochs, learning_rate):
+    def __init__(self, dataloader, id, criterion, local_epochs, learning_rate, path):
 
-        path = "/content/drive/MyDrive/" #todo
-        # path = ""
         self.id = id
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.criterion = criterion
@@ -48,7 +46,7 @@ class ClientGold(object):
                 loss.backward()
                 optimizer.step()
                 local_loss += loss.item() * images.size(0)
-                # break # todo
+                break # todo
 
         self.logger.info(f"{local_loss},{local_correct},{len(self.dataloader.dataset)}")
 
@@ -57,7 +55,7 @@ class ClientGold(object):
 
 class ClientBronze(object):
 
-    def __init__(self, dataloader, id, criterion, local_epochs, learning_rate, in_size, pruning_percentage=0.5):
+    def __init__(self, dataloader, id, criterion, local_epochs, learning_rate, path, in_size, pruning_percentage=0.5):
         self.id = id
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.criterion = criterion
@@ -68,8 +66,6 @@ class ClientBronze(object):
         self.logger = logging.getLogger(f'client{id}')
         self.logger.setLevel(logging.INFO)
 
-        path = "/content/drive/MyDrive/" #tod0
-        # path = ""
         ch = logging.FileHandler(f'{path}reports/client{id}', "w")
         ch.setLevel(logging.INFO)
         self.logger.addHandler(ch)
@@ -107,7 +103,7 @@ class ClientBronze(object):
                 loss.backward()
                 optimizer.step()
                 local_loss += loss.item() * images.size(0)
-                # break # todo
+                break # todo
 
         self.logger.info(f"{local_loss},{local_correct},{len(self.dataloader.dataset)}")
 
