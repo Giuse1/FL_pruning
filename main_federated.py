@@ -20,7 +20,7 @@ local_epochs = 1
 lr = 0.1
 
 num_rounds = 100  # todo
-batch_size = 2  # todo
+batch_size = 64  # todo
 in_size = 32  # todo
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

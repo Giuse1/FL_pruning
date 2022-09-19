@@ -19,7 +19,7 @@ def set_seed(seed):
 def get_cifar_iid(batch_size, total_num_clients, in_size):
     transform = transforms.Compose(
         [
-            transforms.Resize(in_size),
+            transforms.Resize(224),
             transforms.ToTensor(),
             transforms.Normalize(
                 (0.4914, 0.4822, 0.4465),
@@ -41,8 +41,8 @@ def get_cifar_iid(batch_size, total_num_clients, in_size):
     for i in range(total_num_clients):
 
         indexes = random_list[i*data_per_client: (i+1)*data_per_client]
-        datasets.append(list(itemgetter(*indexes)(trainset)))
-
+        # datasets.append(list(itemgetter(*indexes)(trainset)))
+        datasets.append(torch.utils.data.Subset(trainset, indexes))
     trainloader_list = []
     for d in datasets:
         trainloader_list.append(torch.utils.data.DataLoader(d, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True))
