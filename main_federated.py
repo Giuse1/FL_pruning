@@ -8,8 +8,8 @@ import utils
 from FL_train import train_model
 import vgg11_custom
 
-path = "/content/drive/MyDrive/"  # tod0
-# path = ""
+# path = "/content/drive/MyDrive/"  # tod0
+path = ""
 pruning_percentage = 0.5
 
 utils.set_seed(0)
@@ -17,12 +17,11 @@ utils.set_seed(0)
 total_num_users = 4
 num_users = 4
 local_epochs = 1
-lr = 0.01
+lr = 0.1
 
 num_rounds = 100  # todo
-batch_size = 64  # todo
+batch_size = 2  # todo
 in_size = 32  # todo
-
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 

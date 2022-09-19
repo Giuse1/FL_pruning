@@ -11,7 +11,6 @@ random.seed(0)
 def train_model(global_model, criterion, num_rounds, local_epochs, total_num_users, num_users, batch_size,
                 learning_rate, iid, in_size, client_type_dict, path, pruning_percentage):
     utils.set_seed(0)
-
     print(client_type_dict)
 
     server = Server(client_type_dict, copy.deepcopy(global_model.state_dict()), pruning_percentage)
@@ -19,12 +18,10 @@ def train_model(global_model, criterion, num_rounds, local_epochs, total_num_use
     logger = logging.getLogger(f'server')
     logger.setLevel(logging.INFO)
 
-
-    ch = logging.FileHandler(f'{path}reports/seerver', "w")
+    ch = logging.FileHandler(f'{path}reports/server', "w")
     ch.setLevel(logging.INFO)
     logger.addHandler(ch)
     logger.info("loss,acc")
-
 
     train_loss, train_acc = [], []
     val_loss, val_acc = [], []

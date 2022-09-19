@@ -26,8 +26,6 @@ class Server(object):
 
     def set_present_rows(self, path):
 
-
-
         self.present_rows_setted = True
 
         self.nonzero_output = {k: torch.load(f"{path}nonzero_indices/output/{k.replace('.weight', '')}.pt") for k in
@@ -59,7 +57,7 @@ class Server(object):
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels)
                 running_total += labels.shape[0]
-                break # todo
+                break  # todo
 
             epoch_loss = running_loss / running_total
             epoch_acc = running_corrects / running_total
@@ -75,16 +73,19 @@ class Server(object):
         if self.mask_dict_global == None:
             for cnt, i in enumerate(w.keys()):
                 if cnt == 0 and self.client_type_dict[i] == "gold":
-                    self.mask_dict_global = {k: torch.ones(v.shape).to(self.device) * samples_per_client[i] for k, v in w[i].items()}
+                    self.mask_dict_global = {k: torch.ones(v.shape).to(self.device) * samples_per_client[i] for k, v in
+                                             w[i].items()}
                 elif cnt == 0 and self.client_type_dict[i] == "bronze":
                     self.mask_dict_global = {k: (v != 0).type(torch.int32) * samples_per_client[i] for k, v in
                                              w[i].items()}
                 elif cnt != 0 and self.client_type_dict[i] == "gold":
-                    self.mask_dict_global = {k: torch.ones(v.shape).to(self.device) * samples_per_client[i] + self.mask_dict_global[k]
-                                             for k, v in w[i].items()}
+                    self.mask_dict_global = {
+                        k: torch.ones(v.shape).to(self.device) * samples_per_client[i] + self.mask_dict_global[k]
+                        for k, v in w[i].items()}
                 elif cnt != 0 and self.client_type_dict[i] == "bronze":
                     self.mask_dict_global = {
-                        k: (v != 0).type(torch.int32).to(self.device) * samples_per_client[i] + self.mask_dict_global[k] for k, v in
+                        k: (v != 0).type(torch.int32).to(self.device) * samples_per_client[i] + self.mask_dict_global[k]
+                        for k, v in
                         w[i].items()}
 
         w_avg = copy.deepcopy(w[0])
@@ -94,8 +95,18 @@ class Server(object):
                     w_avg[key] = torch.true_divide(w[i][key], 1 / samples_per_client[i])
                 else:
                     w_avg[key] += torch.true_divide(w[i][key], 1 / samples_per_client[i])
-            w_avg[key] = torch.true_divide(w_avg[key], sum(samples_per_client.values()))
-            # w_avg[key] = torch.true_divide(w_avg[key], self.mask_dict_global[key])
+
+                # elif i == 1:
+                #     w_avg[key] += torch.true_divide(w[i][key], 1 / samples_per_client[i])
+                # elif i ==2:
+                #     sum_gold = torch.true_divide(w_avg[key].sum(), samples_per_client[0]+samples_per_client[1])
+                #     multplier = sum_gold/(w[i][key].sum())
+                #     w_avg[key] += torch.true_divide(w[i][key]*multplier, 1 / samples_per_client[i])
+                # else:
+                #     w_avg[key] += torch.true_divide(w[i][key]*multplier, 1 / samples_per_client[i])
+
+            # w_avg[key] = torch.true_divide(w_avg[key], sum(samples_per_client.values()))
+            w_avg[key] = torch.true_divide(w_avg[key], self.mask_dict_global[key])
         return w_avg
 
     def recover_matrix(self, idx, model_dict, n_classes, original_dict):
@@ -124,8 +135,8 @@ class Server(object):
 
                 mask = torch.zeros(dim)
 
-                mask[self.output_nz[k], :] += torch.ones((int(dim[0]*(1-self.pruning_percentage)), dim[1]))
-                mask[:, self.input_nz[k]] += torch.ones((dim[0], int(dim[1]*(1-self.pruning_percentage))))
+                mask[self.output_nz[k], :] += torch.ones((int(dim[0] * (1 - self.pruning_percentage)), dim[1]))
+                mask[:, self.input_nz[k]] += torch.ones((dim[0], int(dim[1] * (1 - self.pruning_percentage))))
                 mask = mask == 2
 
                 reconstructed_b[self.output_nz[k]] = model_dict[k + ".bias"].cpu()
@@ -140,7 +151,7 @@ class Server(object):
         reconstructed_w = torch.zeros(dim)
 
         mask = torch.zeros(dim)
-        mask[:, self.input_nz[k]] += torch.ones((dim[0], int(dim[1]*(1-self.pruning_percentage))))
+        mask[:, self.input_nz[k]] += torch.ones((dim[0], int(dim[1] * (1 - self.pruning_percentage))))
         mask = mask == 1
         reconstructed_w[mask] = torch.reshape(model_dict[k + ".weight"], (-1,)).cpu()
         reconstruced_dict[k + ".weight"] = reconstructed_w.to(device)
