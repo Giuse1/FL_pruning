@@ -10,7 +10,7 @@ import vgg11_custom
 
 # path = "/content/drive/MyDrive/"  # tod0
 path = ""
-pruning_percentage = 0.5
+pruning_percentage = 0.25
 
 utils.set_seed(0)
 
