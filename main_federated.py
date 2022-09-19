@@ -7,9 +7,12 @@ import torchvision
 import utils
 from FL_train import train_model
 import vgg11_custom
+import os
 
-# path = "/content/drive/MyDrive/"  # tod0
-path = ""
+if os.path.exists("/content/drive/MyDrive/"):
+    path = "/content/drive/MyDrive/"  # todo
+else:
+    path = ""
 pruning_percentage = 0.25
 
 utils.set_seed(0)

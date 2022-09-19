@@ -2,9 +2,12 @@ import logging
 from collections import OrderedDict
 import torch
 import torch.nn.utils.prune as prune
-from simplify import simplify
-# from simplify.simplify import simplify
+import os
 
+if os.path.exists("/content/drive/MyDrive/"):
+    from simplify.simplify import simplify
+else:
+    from simplify import simplify
 
 
 class ClientGold(object):
