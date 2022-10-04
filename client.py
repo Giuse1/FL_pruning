@@ -3,6 +3,7 @@ from collections import OrderedDict
 import torch
 import torch.nn.utils.prune as prune
 import os
+from torch import autograd
 
 if os.path.exists("/content/drive/MyDrive/"):
     from simplify.simplify import simplify
@@ -10,7 +11,8 @@ else:
     from simplify import simplify
 
 
-class ClientGold(object):
+
+class Client(object):
 
     def __init__(self, dataloader, id, criterion, local_epochs, learning_rate, path):
 
@@ -56,24 +58,11 @@ class ClientGold(object):
         return model.state_dict(), len(self.dataloader.dataset)
 
 
-class ClientBronze(object):
+class ClientBronze(Client):
 
     def __init__(self, dataloader, id, criterion, local_epochs, learning_rate, path, in_size, pruning_percentage=0.5):
-        self.id = id
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.criterion = criterion
-        self.local_epochs = local_epochs
-        self.dataloader = dataloader
-        self.learning_rate = learning_rate
 
-        self.logger = logging.getLogger(f'client{id}')
-        self.logger.setLevel(logging.INFO)
-
-        ch = logging.FileHandler(f'{path}reports/client{id}', "w")
-        ch.setLevel(logging.INFO)
-        self.logger.addHandler(ch)
-        self.logger.info("local_loss,local_correct,len_dataset")
-
+        Client.__init__(self,  dataloader, id, criterion, local_epochs, learning_rate, path)
         self.mask_created = False
         self.in_size = in_size
         self.pruning_percentage = pruning_percentage
@@ -87,28 +76,9 @@ class ClientBronze(object):
         else:
             self.prune_from_mask(model, self.device, self.in_size)
 
-        model.train()
-        lr = self.learning_rate
-        optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+        super().update_weights(model,epoch)
 
-        for _ in range(self.local_epochs):
-
-            local_correct = 0
-            local_loss = 0.0
-            for (i, data) in enumerate(self.dataloader):
-                images, labels = data[0].to(self.device), data[1].to(self.device)
-                optimizer.zero_grad()
-                log_probs = model(images)
-                loss = self.criterion(log_probs, labels)
-                _, preds = torch.max(log_probs, 1)
-                local_correct += torch.sum(preds == labels).cpu().numpy()
-
-                loss.backward()
-                optimizer.step()
-                local_loss += loss.item() * images.size(0)
-                break # todo
-
-        self.logger.info(f"{local_loss},{local_correct},{len(self.dataloader.dataset)}")
+        # self.logger.info(f"{local_loss},{local_correct},{len(self.dataloader.dataset)}")
 
         return model.state_dict(), len(self.dataloader.dataset)
 
@@ -145,7 +115,6 @@ class ClientBronze(object):
             cmp, idx = name.split('.')
             prune.custom_from_mask(getattr(model, cmp)[int(idx)], name="weight", mask=mask)
             prune.remove(getattr(model, cmp)[int(idx)], 'weight')
-            # torch.nan_to_num(model.state_dict()[f"{cmp}.{int(idx)}.weight"], nan=0.5)
 
         dummy_input = torch.zeros(1, 3, in_size, in_size).to(device)
         simplify(model, dummy_input)

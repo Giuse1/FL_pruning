@@ -23,6 +23,7 @@ class Server(object):
         self.original_keys = [k.replace(".weight", '') for k in self.original_keys]
         self.original_keys = list(dict.fromkeys(self.original_keys))
         self.present_rows_setted = False
+        self.round = 0
 
     def set_present_rows(self, path):
 
@@ -68,8 +69,12 @@ class Server(object):
 
         # recover full weight matrices
         for i in self.to_recover:
+            torch.save(w[i], f"FL_model/client{i}_r{self.round}_before_recover.pt")
             w[i] = self.recover_matrix(i, w[i], 10, w[self.not_to_recover[0]])
 
+        for i,m in w.items():
+            torch.save(m, f"FL_model/client{i}_r{self.round}.pt")
+        self.round += 1
         if self.mask_dict_global == None:
             for cnt, i in enumerate(w.keys()):
                 if cnt == 0 and self.client_type_dict[i] == "gold":
@@ -107,6 +112,7 @@ class Server(object):
 
             # w_avg[key] = torch.true_divide(w_avg[key], sum(samples_per_client.values()))
             w_avg[key] = torch.true_divide(w_avg[key], self.mask_dict_global[key])
+            print(f"{key} - {bool(w_avg[key].isnan().any())}")
         return w_avg
 
     def recover_matrix(self, idx, model_dict, n_classes, original_dict):

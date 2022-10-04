@@ -38,6 +38,8 @@ class VGG(nn.Module):
         x = self.classifier(x)
         return x
 
+
+
     def _initialize_weights(self) -> None:
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
