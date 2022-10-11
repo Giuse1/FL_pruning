@@ -68,12 +68,12 @@ def train_model(name_log, global_model, criterion, num_rounds, local_epochs, tot
                 global_model.load_state_dict(global_weights)
 
             else:
-                pass
-                # val_loss_r, val_accuracy_r = server.model_evaluation(model=global_model,
-                #                                                      dataloader=valloader, criterion=criterion)
-                # val_loss.append(val_loss_r)
-                # val_acc.append(val_accuracy_r)
-                # print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, val_loss_r, val_accuracy_r))
-                # logger.info(f"{val_loss_r},{val_accuracy_r}")
+                # pass
+                val_loss_r, val_accuracy_r = server.model_evaluation(model=global_model,
+                                                                     dataloader=valloader, criterion=criterion)
+                val_loss.append(val_loss_r)
+                val_acc.append(val_accuracy_r)
+                print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, val_loss_r, val_accuracy_r))
+                logger.info(f"{val_loss_r},{val_accuracy_r}")
 
     return train_loss, train_acc, val_loss, val_acc

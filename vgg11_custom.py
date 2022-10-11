@@ -54,9 +54,20 @@ class VGG(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
 
-def make_layers(cfg: List[Union[str, int]], batch_norm: bool = False) -> nn.Sequential:
+class Scaler(nn.Module):
+    def __init__(self, rate):
+        super().__init__()
+        self.rate = rate
+
+    def forward(self, input):
+        output = input / self.rate if self.training else input
+        return output
+
+
+def make_layers(cfg: List[Union[str, int]], batch_norm: bool = False, rate: float = 1.) -> nn.Sequential:
     layers: List[nn.Module] = []
     in_channels = 3
+    scaler = Scaler(rate)
     for v in cfg:
         if v == 'M':
             layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
@@ -64,9 +75,9 @@ def make_layers(cfg: List[Union[str, int]], batch_norm: bool = False) -> nn.Sequ
             v = cast(int, v)
             conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1, bias=False)
             if batch_norm:
-                layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
+                layers += [conv2d, scaler, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
             else:
-                layers += [conv2d, nn.ReLU(inplace=True)]
+                layers += [conv2d,scaler, nn.ReLU(inplace=True)]
             in_channels = v
     return nn.Sequential(*layers)
 
@@ -76,15 +87,15 @@ cfgs: Dict[str, List[Union[str, int]]] = {
  }
 
 
-def _vgg(arch: str, cfg: str, batch_norm: bool, pretrained: bool, progress: bool, **kwargs: Any) -> VGG:
+def _vgg(arch: str, cfg: str, batch_norm: bool, pretrained: bool,  rate:float, progress: bool, **kwargs: Any) -> VGG:
     if pretrained:
         kwargs['init_weights'] = False
-    model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
+    model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm, rate=rate), **kwargs)
 
     return model
 
 
-def vgg11(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
+def vgg11(pretrained: bool = False, rate:float = 1, progress: bool = True, **kwargs: Any) -> VGG:
     r"""VGG 11-layer model (configuration "A") from
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_.
     The required minimum input size of the model is 32x32.
@@ -93,4 +104,4 @@ def vgg11(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _vgg('vgg11', 'A', False, pretrained, progress, **kwargs)
+    return _vgg('vgg11', 'A', False, pretrained,rate, progress, **kwargs)

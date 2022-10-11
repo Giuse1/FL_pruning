@@ -3,6 +3,7 @@ from collections import OrderedDict
 import torch
 import torch.nn.utils.prune as prune
 import os
+import vgg11_custom
 from torch import autograd
 
 if os.path.exists("/content/drive/MyDrive/"):
@@ -51,7 +52,7 @@ class Client(object):
                 loss.backward()
                 optimizer.step()
                 local_loss += loss.item() * images.size(0)
-                break # todo
+                # break # todo
 
         self.logger.info(f"{local_loss},{local_correct},{len(self.dataloader.dataset)}")
 
@@ -74,7 +75,7 @@ class ClientBronze(Client):
                                                     in_size=self.in_size)
             self.mask_created = True
         else:
-            self.prune_from_mask(model, self.device, self.in_size)
+            self.prune_from_mask(model, self.device, self.in_size, percentage=self.pruning_percentage)
 
         super().update_weights(model,epoch)
 
@@ -84,17 +85,16 @@ class ClientBronze(Client):
 
     def prune_model_fixed(self, model, percentage, device, in_size):
 
-        parameters_to_prune = (
-            ("features.0", 'weight'),
-            ("features.3", 'weight'),
-            ("features.6", 'weight'),
-            ("features.8", 'weight'),
-            ("features.11", 'weight'),
-            ("features.13", 'weight'),
-            ("features.16", 'weight'),
-            ("features.18", 'weight'),
+        set_scaler(model, 1-percentage)
+
+        list_conv = []
+
+        find_conv(model,list_conv)
+
+        parameters_to_prune = [(f"features.{i}", "weight")for i,n in list_conv]
+        parameters_to_prune = [*parameters_to_prune,
             ("classifier.0", 'weight'),
-            ("classifier.3", 'weight'))
+            ("classifier.3", 'weight')]
 
         mask_dict = OrderedDict()
         for name, attr in parameters_to_prune:
@@ -109,7 +109,11 @@ class ClientBronze(Client):
 
         return mask_dict
 
-    def prune_from_mask(self, model, device, in_size):
+
+    def prune_from_mask(self, model, device, in_size, percentage):
+
+        set_scaler(model, 1-percentage)
+
 
         for name, mask in self.mask_dict.items():
             cmp, idx = name.split('.')
@@ -119,6 +123,24 @@ class ClientBronze(Client):
         dummy_input = torch.zeros(1, 3, in_size, in_size).to(device)
         simplify(model, dummy_input)
 
+
+def find_conv(m, list_conv):
+    # a = model.features[i]._modules
+    a = m._modules
+    for k, v in a.items():
+        if isinstance(v, torch.nn.Conv2d):
+            list_conv.append((k,v))
+        else:
+            find_conv(v, list_conv)
+
+def set_scaler(m, rate):
+    # a = model.features[i]._modules
+    a = m._modules
+    for k, v in a.items():
+        if isinstance(v, vgg11_custom.Scaler):
+            v.rate = rate
+        else:
+            set_scaler(v, rate)
 
 
 

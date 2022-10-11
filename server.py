@@ -58,7 +58,7 @@ class Server(object):
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels)
                 running_total += labels.shape[0]
-                break  # todo
+                # break  # todo
 
             epoch_loss = running_loss / running_total
             epoch_acc = running_corrects / running_total
@@ -69,13 +69,14 @@ class Server(object):
 
         # recover full weight matrices
         for i in self.to_recover:
-            torch.save(w[i], f"FL_model/client{i}_r{self.round}_before_recover.pt")
+            # torch.save(w[i], f"FL_model/client{i}_r{self.round}_before_recover.pt")
             w[i] = self.recover_matrix(i, w[i], 10, w[self.not_to_recover[0]])
 
-        for i,m in w.items():
-            torch.save(m, f"FL_model/client{i}_r{self.round}.pt")
+        # for i,m in w.items():
+        #     torch.save(m, f"FL_model/client{i}_r{self.round}.pt")
         self.round += 1
         if self.mask_dict_global == None:
+
             for cnt, i in enumerate(w.keys()):
                 if cnt == 0 and self.client_type_dict[i] == "gold":
                     self.mask_dict_global = {k: torch.ones(v.shape).to(self.device) * samples_per_client[i] for k, v in
@@ -112,7 +113,7 @@ class Server(object):
 
             # w_avg[key] = torch.true_divide(w_avg[key], sum(samples_per_client.values()))
             w_avg[key] = torch.true_divide(w_avg[key], self.mask_dict_global[key])
-            print(f"{key} - {bool(w_avg[key].isnan().any())}")
+            # print(f"{key} - {bool(w_avg[key].isnan().any())}")
         return w_avg
 
     def recover_matrix(self, idx, model_dict, n_classes, original_dict):
