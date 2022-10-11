@@ -30,7 +30,7 @@ local_epochs = 1
 lr = 0.01
 
 num_rounds = 100
-batch_size = 64  # todo
+batch_size = 1  # todo
 in_size = 224  # todo
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -49,5 +49,5 @@ name_log = "bronze"
 train_loss, train_acc, val_loss, val_acc = train_model(name_log, model, criterion, num_rounds=num_rounds,
                                                        local_epochs=local_epochs, total_num_users=total_num_users,
                                                        num_users=num_users, batch_size=batch_size, learning_rate=lr,
-                                                       iid=False, in_size=in_size, client_type_dict=client_type_dict,
+                                                       iid=True, in_size=in_size, client_type_dict=client_type_dict,
                                                        path=path,pruning_percentage=pruning_percentage)

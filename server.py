@@ -58,7 +58,7 @@ class Server(object):
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels)
                 running_total += labels.shape[0]
-                # break  # todo
+                break  # todo
 
             epoch_loss = running_loss / running_total
             epoch_acc = running_corrects / running_total
@@ -127,16 +127,26 @@ class Server(object):
 
             if "features" in k:
 
-                for idx_r, r in enumerate(self.present_rows[idx_k + 1]):
-                    # reconstructed_b[r] = model_dict[k + ".bias"][idx_r]
+                r = torch.tensor(self.present_rows[idx_k+1], dtype=torch.int64)
+                c = torch.tensor(self.present_rows[idx_k], dtype=torch.int64)
+                reconstructed_w[torch.meshgrid(r,c)] =  model_dict[k + ".weight"]
 
-                    for idx_c, c in enumerate(self.present_rows[idx_k]):
-                        tmp = model_dict[k + ".weight"][idx_r, idx_c]
-
-                        reconstructed_w[r, c] = tmp
+                #
+                # for idx_r, r in enumerate(self.present_rows[idx_k + 1]):
+                #     # reconstructed_b[r] = model_dict[k + ".bias"][idx_r]
+                #
+                #     for idx_c, c in enumerate(self.present_rows[idx_k]):
+                #         tmp = model_dict[k + ".weight"][idx_r, idx_c]
+                #
+                #         reconstructed_w[r, c] = tmp
                 reconstruced_dict[k + ".weight"] = reconstructed_w.to(device)
                 # reconstruced_dict[k + ".bias"] = reconstructed_b
             elif "classifier" in k and "classifier.6" not in k:
+
+                # r = torch.tensor(self.present_rows[idx_k + 1], dtype=torch.int64)
+                # c = torch.tensor(self.present_rows[idx_k], dtype=torch.int64)
+                # reconstructed_w2 = copy.deepcopy(reconstructed_w)
+                # reconstructed_w2[torch.meshgrid(r, c)] = model_dict[k + ".weight"]
 
                 reconstructed_b = torch.zeros(dim[0])
 

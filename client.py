@@ -52,7 +52,7 @@ class Client(object):
                 loss.backward()
                 optimizer.step()
                 local_loss += loss.item() * images.size(0)
-                # break # todo
+                break # todo
 
         self.logger.info(f"{local_loss},{local_correct},{len(self.dataloader.dataset)}")
 
@@ -77,7 +77,7 @@ class ClientBronze(Client):
         else:
             self.prune_from_mask(model, self.device, self.in_size, percentage=self.pruning_percentage)
 
-        super().update_weights(model,epoch)
+#        super().update_weights(model,epoch)
 
         # self.logger.info(f"{local_loss},{local_correct},{len(self.dataloader.dataset)}")
 

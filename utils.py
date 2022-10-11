@@ -19,7 +19,7 @@ def set_seed(seed):
 def get_cifar_iid(batch_size, total_num_clients, in_size):
     mean, std = (0.491, 0.482, 0.447), (0.247, 0.243, 0.262)
     transform = transforms.Compose([
-        transforms.Resize(224),
+        transforms.Resize(in_size),
         transforms.ToTensor(),
         transforms.Normalize(mean, std),
     ])
@@ -50,7 +50,7 @@ def get_cifar_iid(batch_size, total_num_clients, in_size):
 def get_cifar_noniid(batch_size, total_num_clients, in_size):
     mean, std = (0.491, 0.482, 0.447), (0.247, 0.243, 0.262)
     transform = transforms.Compose([
-        transforms.Resize(224),
+        transforms.Resize(in_size),
         transforms.ToTensor(),
         transforms.Normalize(mean, std),
     ])
@@ -79,10 +79,10 @@ def get_cifar_noniid(batch_size, total_num_clients, in_size):
     return trainloader_list, testloader
 
 
-def get_cifar100_subset(batch_size, total_num_clients):
+def get_cifar100_subset(batch_size, total_num_clients, in_size):
     mean, std = (0.491, 0.482, 0.447), (0.247, 0.243, 0.262)
     transform = transforms.Compose([
-        transforms.Resize(224),
+        transforms.Resize(in_size),
         transforms.ToTensor(),
         transforms.Normalize(mean, std),
     ])
