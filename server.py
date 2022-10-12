@@ -1,7 +1,12 @@
 import copy
 from collections import OrderedDict
 import torch
+import torch.nn.utils.prune as prune
+import os
+import vgg11_custom
+from torch import autograd
 
+from simplify import simplify
 
 class Server(object):
 
@@ -58,7 +63,7 @@ class Server(object):
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels)
                 running_total += labels.shape[0]
-                break  # todo
+                # break  # todo
 
             epoch_loss = running_loss / running_total
             epoch_acc = running_corrects / running_total
@@ -123,13 +128,14 @@ class Server(object):
         for idx_k, k in enumerate(self.original_keys):
 
             dim = original_dict[f"{k}.weight"].shape
-            reconstructed_w = torch.zeros(dim)
+            reconstructed_w = torch.zeros(dim).to(device)
 
             if "features" in k:
 
-                r = torch.tensor(self.present_rows[idx_k+1], dtype=torch.int64)
+                r = torch.tensor(self.present_rows[idx_k + 1], dtype=torch.int64)
                 c = torch.tensor(self.present_rows[idx_k], dtype=torch.int64)
-                reconstructed_w[torch.meshgrid(r,c)] =  model_dict[k + ".weight"]
+
+                reconstructed_w[torch.meshgrid(r, c)] = model_dict[k + ".weight"]
 
                 #
                 # for idx_r, r in enumerate(self.present_rows[idx_k + 1]):
@@ -148,7 +154,7 @@ class Server(object):
                 # reconstructed_w2 = copy.deepcopy(reconstructed_w)
                 # reconstructed_w2[torch.meshgrid(r, c)] = model_dict[k + ".weight"]
 
-                reconstructed_b = torch.zeros(dim[0])
+                reconstructed_b = torch.zeros(dim[0]).to(device)
 
                 mask = torch.zeros(dim)
 
@@ -156,21 +162,61 @@ class Server(object):
                 mask[:, self.input_nz[k]] += torch.ones((dim[0], int(dim[1] * (1 - self.pruning_percentage))))
                 mask = mask == 2
 
-                reconstructed_b[self.output_nz[k]] = model_dict[k + ".bias"].cpu()
+                reconstructed_b[self.output_nz[k]] = model_dict[k + ".bias"]
                 reconstruced_dict[k + ".bias"] = reconstructed_b.to(device)
 
-                reconstructed_w[mask] = torch.reshape(model_dict[k + ".weight"], (-1,)).cpu()
+                reconstructed_w[mask] = torch.reshape(model_dict[k + ".weight"], (-1,))
                 reconstruced_dict[k + ".weight"] = reconstructed_w.to(device)
 
         k = "classifier.6"
         reconstruced_dict[k + ".bias"] = model_dict["classifier.6.bias"]
         dim = (n_classes, self.input_nz[k].shape[0])
-        reconstructed_w = torch.zeros(dim)
+        reconstructed_w = torch.zeros(dim).to(device)
 
         mask = torch.zeros(dim)
         mask[:, self.input_nz[k]] += torch.ones((dim[0], int(dim[1] * (1 - self.pruning_percentage))))
         mask = mask == 1
-        reconstructed_w[mask] = torch.reshape(model_dict[k + ".weight"], (-1,)).cpu()
+        reconstructed_w[mask] = torch.reshape(model_dict[k + ".weight"], (-1,))
         reconstruced_dict[k + ".weight"] = reconstructed_w.to(device)
 
+        check_recover(model_dict, reconstruced_dict)
+
         return reconstruced_dict
+
+
+def check_recover(pruned, recovered_dict):
+    list_conv = []
+
+    recovered = vgg11_custom.vgg11(pretrained=False, rate=1)
+    in_features = recovered.classifier[6].in_features
+    recovered.classifier[6] = torch.nn.Linear(in_features, out_features=10, bias=True)
+    recovered.load_state_dict(recovered_dict)
+    find_conv(recovered, list_conv)
+
+    parameters_to_prune = [(f"features.{i}", "weight") for i, n in list_conv]
+    parameters_to_prune = [*parameters_to_prune,
+                           ("classifier.0", 'weight'),
+                           ("classifier.3", 'weight')]
+
+    mask_dict = OrderedDict()
+    for name, attr in parameters_to_prune:
+        layer_name, n = name.split(".")
+        prune.ln_structured(getattr(recovered, layer_name)[int(n)], name=attr,
+                            amount=0.25, n=2, dim=0)  # pp_prune[f"{layer_name}.{n}.{attr}"]
+        mask_dict[name] = recovered.state_dict()[name + ".weight_mask"]
+        prune.remove(getattr(recovered, layer_name)[int(n)], name=attr)
+
+    dummy_input = torch.zeros(1, 3, 224, 224)
+    simplify(recovered, dummy_input)
+
+    for k in pruned.keys():
+        print(torch.equal(pruned[k], recovered.state_dict()[k]))
+
+def find_conv(m, list_conv):
+    # a = model.features[i]._modules
+    a = m._modules
+    for k, v in a.items():
+        if isinstance(v, torch.nn.Conv2d):
+            list_conv.append((k,v))
+        else:
+            find_conv(v, list_conv)

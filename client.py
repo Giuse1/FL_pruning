@@ -52,7 +52,7 @@ class Client(object):
                 loss.backward()
                 optimizer.step()
                 local_loss += loss.item() * images.size(0)
-                break # todo
+                # break # todo
 
         self.logger.info(f"{local_loss},{local_correct},{len(self.dataloader.dataset)}")
 
@@ -113,8 +113,6 @@ class ClientBronze(Client):
     def prune_from_mask(self, model, device, in_size, percentage):
 
         set_scaler(model, 1-percentage)
-
-
         for name, mask in self.mask_dict.items():
             cmp, idx = name.split('.')
             prune.custom_from_mask(getattr(model, cmp)[int(idx)], name="weight", mask=mask)
