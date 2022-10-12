@@ -90,7 +90,7 @@ cfgs: Dict[str, List[Union[str, int]]] = {
 def _vgg(arch: str, cfg: str, batch_norm: bool, pretrained: bool,  rate:float, progress: bool, **kwargs: Any) -> VGG:
     if pretrained:
         kwargs['init_weights'] = False
-    model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm, rate=rate), **kwargs)
+    model = VGG(make_layers(cfgs[cfg], batch_norm=True, rate=rate), **kwargs)
 
     return model
 
